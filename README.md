@@ -6,7 +6,7 @@ Basic utilties for processing Tweets. Includes:
 
 ## Installation
 ```bash
-git clone git@github.com:AADeLucia/littlebird.git
+git clone https://github.com/AADeLucia/littlebird.git
 cd littlebird
 python setup.py develop
 ```

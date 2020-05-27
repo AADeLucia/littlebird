@@ -5,6 +5,7 @@ Author: Alexandra DeLucia
 """
 # Standard imports
 import logging
+import sys
 import os
 import gzip
 import zlib
@@ -30,6 +31,7 @@ class TweetReader:
                 self.f = open(filename, "r")
         except Exception as err:
             logging.error(f"Issue opening {filename}:\n{err}")
+            sys.exit(1)
     
     def read_tweets(self):
         try:

@@ -15,7 +15,7 @@ import jsonlines as jl
 import regex
 
 # Local modules
-from .tweet_utils import TweetReader
+from littlebird import TweetReader
 
 # Configurations
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +38,9 @@ class TweetTokenizer:
     def __init__(self, 
         language="en",
         token_pattern=r"\b\w+\b",
-        stopwords=None):
+        stopwords=None,
+        remove_hashtags=False
+        ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
         There are many options for the token pattern, and the token pattern should be different depending upon your use case.
@@ -59,9 +61,11 @@ class TweetTokenizer:
         self.HANDLE_RE = r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)"
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
+        self.HASHTAG_RE = regex.compile(r"#\w+")
         self.REMOVAL_RE = regex.compile("|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE]))
         self.WHITESPACE_RE = regex.compile("\s+")
         self.TOKEN_RE = regex.compile(token_pattern)
+        self.remove_hashtags = remove_hashtags
         return
 
     def tokenize(self, tweet):
@@ -69,6 +73,8 @@ class TweetTokenizer:
         :param tweets:
         :return: tokens
         """
+        if self.remove_hashtags:
+            tweet = self.HASHTAG_RE.sub(" ", tweet)
         tweet = self.REMOVAL_RE.sub(" ", tweet)
         tweet = self.WHITESPACE_RE.sub(" ", tweet)
         tweet = tweet.lower()
@@ -126,8 +132,8 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    tokenizer = TweetTokenizer()
-    tweet_text = tokenizer.tokenize_tweet_file("/home/aadelucia/files/minerva/data/tweets_en/2014_01_01_MA.gz", sample_size=10)
+    tokenizer = TweetTokenizer(remove_hashtags=True)
+    tweet_text = tokenizer.tokenize_tweet_file("/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz", sample_size=10)
     print(tweet_text)
 
 

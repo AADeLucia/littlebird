@@ -23,6 +23,7 @@ logging.basicConfig(level=logging.INFO)
 class TweetReader:
     """Iterator to read a Twitter file"""
     def __init__(self, filename):
+        self.path = filename
         try:
             ftype = filetype.guess(filename).extension
             if ftype == "gz":
@@ -31,7 +32,7 @@ class TweetReader:
                 self.f = open(filename, "r")
         except Exception as err:
             logging.error(f"Issue opening {filename}:\n{err}")
-            sys.exit(1)
+            return
     
     def read_tweets(self):
         try:
@@ -39,7 +40,10 @@ class TweetReader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
                     yield tweet
         except (ValueError) as err:
-           logging.error(f"Error encountered in tweet:\n{tweet}") 
+           logging.error(f"Error encountered in tweet:\n{tweet}")
+        except (gzip.BadGzipFile, zlib.error) as err:
+            logging.error(f"Error reading {self.path}: {err}")
+        return
 
 
 if __name__ == "__main__":

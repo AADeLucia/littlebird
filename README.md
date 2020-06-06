@@ -2,7 +2,8 @@
 
 Basic utilties for processing Tweets. Includes:  
 * TweetTokenizer for tokenizing the Tweet content
-* TweetReader for easily iterating over tweets
+* TweetReader for easily iterating over Tweets
+* TweetWriter for conveniently writing Tweets to a file
 
 ## Installation
 ```bash
@@ -35,4 +36,5 @@ for tweet in reader.read_tweets():
     tokens = tokenizer.tokenize(text)
 ```
 
+Copyright (c) 2020 Alexandra DeLucia
 

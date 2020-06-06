@@ -39,7 +39,8 @@ class TweetTokenizer:
         language="en",
         token_pattern=r"\b\w+\b",
         stopwords=None,
-        remove_hashtags=False
+        remove_hashtags=False,
+        lowercase=True
         ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -58,14 +59,17 @@ class TweetTokenizer:
             raise LanguageNotSupportedError(language)
         else:
             self.language = language
+
+        # Forgot where I got this pattern from... Mark? Looks messy
         self.HANDLE_RE = r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)"
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
-        self.HASHTAG_RE = regex.compile(r"#\w+")
+        self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
         self.REMOVAL_RE = regex.compile("|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE]))
-        self.WHITESPACE_RE = regex.compile("\s+")
+        self.WHITESPACE_RE = regex.compile(r"\s+")
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
+        self.lowercase = lowercase
         return
 
     def tokenize(self, tweet):
@@ -77,7 +81,8 @@ class TweetTokenizer:
             tweet = self.HASHTAG_RE.sub(" ", tweet)
         tweet = self.REMOVAL_RE.sub(" ", tweet)
         tweet = self.WHITESPACE_RE.sub(" ", tweet)
-        tweet = tweet.lower()
+        if self.lowercase:
+            tweet = tweet.lower()
         return self.TOKEN_RE.findall(tweet)
 
     def tokenize_tweet_file(self, input_file, sample_size=-1, return_tokens=False):

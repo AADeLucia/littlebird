@@ -32,7 +32,7 @@ for tweet in reader.read_tweets():
     else:
         text = tweet["text"]
     
-    tokens = tokenizer.tokenize()
+    tokens = tokenizer.tokenize(text)
 ```
 
 

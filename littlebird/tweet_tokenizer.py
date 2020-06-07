@@ -4,16 +4,11 @@ General utilities to open a Twitter file.
 Author: Alexandra DeLucia
 """
 # Standard imports
-import os
 import argparse
 import logging
-import gzip
-import zlib
-from collections import Counter
 import random
 
 # Third-party imports
-import jsonlines as jl
 import regex
 
 # Local modules

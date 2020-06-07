@@ -6,11 +6,8 @@ Author: Alexandra DeLucia
 # Standard imports
 import logging
 import sys
-import os
 import gzip
 import zlib
-import tarfile
-import zipfile
 
 # Third-party imports
 import jsonlines as jl

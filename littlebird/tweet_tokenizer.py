@@ -8,6 +8,8 @@ import argparse
 import logging
 import random
 
+from typing import Iterable, List, Optional, Set, Union
+
 # Third-party imports
 import regex
 
@@ -17,13 +19,9 @@ from littlebird import TweetReader
 # Configurations
 logging.basicConfig(level=logging.INFO)
 
-# Define erros
-class Error(Exception):
-    pass
 
-
-class LanguageNotSupportedError(Error):
-    def __init__(self, lang):
+class LanguageNotSupportedError(ValueError):
+    def __init__(self, lang: str):
         self.lang = lang
 
 
@@ -35,11 +33,11 @@ class TweetTokenizer:
 
     def __init__(
         self,
-        language="en",
-        token_pattern=r"\b\w+\b",
-        stopwords=None,
-        remove_hashtags=False,
-        lowercase=True,
+        language: str = "en",
+        token_pattern: str = r"\b\w+\b",
+        stopwords: Optional[Iterable[str]] = None,
+        remove_hashtags: bool = False,
+        lowercase: bool = True,
     ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -71,13 +69,14 @@ class TweetTokenizer:
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
+        self.stopwords: Optional[Set[str]]
         if stopwords is not None:
             self.stopwords = set(stopwords)
         else:
             self.stopwords = None
         return
 
-    def tokenize(self, tweet):
+    def tokenize(self, tweet: str) -> List[str]:
         """
         :param tweets:
         :return: tokens
@@ -100,7 +99,9 @@ class TweetTokenizer:
             tokens = [t for t in tokens if t not in self.stopwords]
         return tokens
 
-    def tokenize_tweet_file(self, input_file, sample_size=-1, return_tokens=False):
+    def tokenize_tweet_file(
+        self, input_file: str, sample_size: int = -1, return_tokens: bool = False
+    ) -> Optional[Union[List[str], List[List[str]]]]:
         """
         Return tokenize tweets in file
 
@@ -121,7 +122,7 @@ class TweetTokenizer:
         # Check for empty file
         if num_tweets == 0:
             logging.warning(f"{input_file} has no tweets.")
-            return
+            return None
 
         # Sample from the file's tweets
         if sample_size != -1:
@@ -130,15 +131,16 @@ class TweetTokenizer:
 
         # Tokenize the tweets and return
         # Some tweets have no valid tokens. Skip them.
-        tweet_text = map(self.tokenize, all_tweet_text)
+        tweet_text_ = map(self.tokenize, all_tweet_text)
+        tweet_text: Union[List[str], List[List[str]]]
         if return_tokens:
-            tweet_text = [t for t in tweet_text if t != []]
+            tweet_text = [t for t in tweet_text_ if t != []]
         else:
-            tweet_text = [" ".join(t) for t in tweet_text if t != []]
+            tweet_text = [" ".join(t) for t in tweet_text_ if t != []]
         return tweet_text
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """Command-line parser for use with scripting"""
     parser = argparse.ArgumentParser()
     parser.add_argument(

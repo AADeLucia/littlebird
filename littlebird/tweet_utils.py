@@ -9,6 +9,8 @@ import sys
 import gzip
 import zlib
 
+from typing import Any, Iterable, List, Union
+
 # Third-party imports
 import jsonlines as jl
 import filetype
@@ -20,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 class TweetReader:
     """Iterator to read a Twitter file"""
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.path = filename
 
         try:
@@ -38,7 +40,7 @@ class TweetReader:
             logging.error(f"Issue opening {filename}:\n{err}")
             sys.exit(1)
 
-    def read_tweets(self):
+    def read_tweets(self) -> Iterable[Any]:
         try:
             with jl.Reader(self.f) as reader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
@@ -56,10 +58,10 @@ class TweetReader:
 class TweetWriter:
     """Write Tweets in jsonlines format"""
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.path = filename
         try:
-            if ".gz" in filename:
+            if filename.endswith(".gz"):
                 self.f = gzip.open(filename, "w+")
             else:
                 self.f = open(filename, "w+")
@@ -67,7 +69,7 @@ class TweetWriter:
             logging.error(f"Issue opening {filename}:\n{err}")
             sys.exit(1)
 
-    def write(self, tweets):
+    def write(self, tweets: Union[Any, List[Any]]) -> None:
         """Write Tweet or list of Tweets to file"""
         with jl.Writer(self.f) as writer:
             if not isinstance(tweets, list):

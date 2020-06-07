@@ -37,13 +37,15 @@ class TweetTokenizer:
     """
     Open Twitter files and process the text content.
     """
-    def __init__(self, 
+
+    def __init__(
+        self,
         language="en",
         token_pattern=r"\b\w+\b",
         stopwords=None,
         remove_hashtags=False,
-        lowercase=True
-        ):
+        lowercase=True,
+    ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
         There are many options for the token pattern, and the token pattern should be different depending upon your use case.
@@ -67,7 +69,9 @@ class TweetTokenizer:
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
         self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
-        self.REMOVAL_RE = regex.compile("|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE]))
+        self.REMOVAL_RE = regex.compile(
+            "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE])
+        )
         self.WHITESPACE_RE = regex.compile(r"\s+")
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
@@ -88,11 +92,11 @@ class TweetTokenizer:
 
         # Remove URLs, handles, "RT"
         tweet = self.REMOVAL_RE.sub(" ", tweet)
-        
+
         # Lowercase
         if self.lowercase:
             tweet = tweet.lower()
-        
+
         # Tokenize
         tokens = self.TOKEN_RE.findall(tweet)
 
@@ -100,7 +104,6 @@ class TweetTokenizer:
         if self.stopwords:
             tokens = [t for t in tokens if t not in self.stopwords]
         return tokens
-
 
     def tokenize_tweet_file(self, input_file, sample_size=-1, return_tokens=False):
         """
@@ -129,7 +132,7 @@ class TweetTokenizer:
         if sample_size != -1:
             if sample_size < num_tweets:
                 all_tweet_text = random.sample(all_tweet_text, k=sample_size)
-        
+
         # Tokenize the tweets and return
         # Some tweets have no valid tokens. Skip them.
         tweet_text = map(self.tokenize, all_tweet_text)
@@ -143,8 +146,15 @@ class TweetTokenizer:
 def parse_args():
     """Command-line parser for use with scripting"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-files", type=str, nargs="+", help="List of GZIP'd Tweet files")
-    parser.add_argument("--sample", type=int, default=-1, help="Number of tweets to use for the keyword counts. Only for Tweet files.")
+    parser.add_argument(
+        "--input-files", type=str, nargs="+", help="List of GZIP'd Tweet files"
+    )
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=-1,
+        help="Number of tweets to use for the keyword counts. Only for Tweet files.",
+    )
     parser.add_argument("--language", choices=["en", "ar"])
     parser.add_argument("--output-dir")
     parser.add_argument("--output-file")
@@ -155,7 +165,8 @@ if __name__ == "__main__":
     args = parse_args()
 
     tokenizer = TweetTokenizer(remove_hashtags=True)
-    tweet_text = tokenizer.tokenize_tweet_file("/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz", sample_size=10)
+    tweet_text = tokenizer.tokenize_tweet_file(
+        "/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz",
+        sample_size=10,
+    )
     print(tweet_text)
-
-

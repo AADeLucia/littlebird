@@ -1,5 +1,7 @@
 """
 General utilities to open a Twitter file.
+
+Author: Alexandra DeLucia
 """
 # Standard imports
 import os
@@ -49,7 +51,7 @@ class TweetTokenizer:
         Only letters: "\p{L}+"
         Letters and numbers: "[\p{L}\p{N}]+"
         Starts with a letter but can contain numbers: "\p{L}[\p{L}\p{N}]+"
-        The default stopwords None uses the ....
+        The default stopwords None does not remove stopwords
         User handle pattern: r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_])    {20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-    z0-9_]*@)"
         Retweet pattern: r"\bRT\b"
         URL pattern: r"http(s)?:\/\/[\w\.\/\?\=]+" 
@@ -60,7 +62,7 @@ class TweetTokenizer:
         else:
             self.language = language
 
-        # Forgot where I got this pattern from... Mark? Looks messy
+        # Handle pattern from NLTK
         self.HANDLE_RE = r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)"
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
@@ -70,6 +72,10 @@ class TweetTokenizer:
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
+        if stopwords is not None:
+            self.stopwords = set(stopwords)
+        else:
+            self.stopwords = None
         return
 
     def tokenize(self, tweet):
@@ -79,11 +85,22 @@ class TweetTokenizer:
         """
         if self.remove_hashtags:
             tweet = self.HASHTAG_RE.sub(" ", tweet)
+
+        # Remove URLs, handles, "RT"
         tweet = self.REMOVAL_RE.sub(" ", tweet)
-        tweet = self.WHITESPACE_RE.sub(" ", tweet)
+        
+        # Lowercase
         if self.lowercase:
             tweet = tweet.lower()
-        return self.TOKEN_RE.findall(tweet)
+        
+        # Tokenize
+        tokens = self.TOKEN_RE.findall(tweet)
+
+        # Remove stopwords
+        if self.stopwords:
+            tokens = [t for t in tokens if t not in self.stopwords]
+        return tokens
+
 
     def tokenize_tweet_file(self, input_file, sample_size=-1, return_tokens=False):
         """

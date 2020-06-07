@@ -1,5 +1,6 @@
 # Misc cache
 *.swp
+*.nfs*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

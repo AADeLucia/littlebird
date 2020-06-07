@@ -47,7 +47,7 @@ for tweet in reader.read_tweets():
 
 # Write out filtered Tweets
 writer = TweetWriter("filtered.json")
-writer.write(tweets)
+writer.write(filtered_tweets)
 ```
 
 
@@ -62,6 +62,7 @@ from littlebird import TweetReader, TweetTokenizer
 # File in JSONlines form. Automatically handles GZIP files.
 tweet_file = "2014_01_02.json.gz"
 reader = TweetReader(tweet_file)
+tokenizer = TweetTokenizer()
 
 # Iterate over Tweets
 # Make sure to check for the "truncated" field otherwise you will only access the 

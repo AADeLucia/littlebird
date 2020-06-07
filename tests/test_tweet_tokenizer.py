@@ -5,6 +5,7 @@ Tests for littlebird/tweet_tokenizer.py
 import unittest
 from typing import List
 
+import littlebird
 from littlebird import TweetTokenizer
 
 
@@ -43,6 +44,14 @@ class TestTweetTokenizer(unittest.TestCase):
             "hospital",
         ]
         self.assertListEqual(tokenized, right_answer)
+
+    def test_supported_langs(self):
+        with self.assertRaises(littlebird.tweet_tokenizer.LanguageNotSupportedError):
+            tokenizer = TweetTokenizer(language="zxx")
+        with self.assertRaises(littlebird.tweet_tokenizer.LanguageNotSupportedError):
+            tokenizer = TweetTokenizer(language="es")
+        with self.assertRaises(littlebird.tweet_tokenizer.LanguageNotSupportedError):
+            tokenizer = TweetTokenizer(language="english")
 
 
 if __name__ == "__main__":

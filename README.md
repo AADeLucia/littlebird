@@ -57,7 +57,7 @@ writer.write(tweets)
 A basic example using the default Tokenizer settings is below.
 
 ```python
-from littlebird import TweetReader, TweetTokenier
+from littlebird import TweetReader, TweetTokenizer
 
 # File in JSONlines form. Automatically handles GZIP files.
 tweet_file = "2014_01_02.json.gz"

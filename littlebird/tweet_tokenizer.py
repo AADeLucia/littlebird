@@ -4,16 +4,13 @@ General utilities to open a Twitter file.
 Author: Alexandra DeLucia
 """
 # Standard imports
-import os
 import argparse
 import logging
-import gzip
-import zlib
-from collections import Counter
 import random
 
+from typing import Iterable, List, Optional, Set, Union
+
 # Third-party imports
-import jsonlines as jl
 import regex
 
 # Local modules
@@ -22,13 +19,9 @@ from littlebird import TweetReader
 # Configurations
 logging.basicConfig(level=logging.INFO)
 
-# Define erros
-class Error(Exception):
-    pass
 
-
-class LanguageNotSupportedError(Error):
-    def __init__(self, lang):
+class LanguageNotSupportedError(ValueError):
+    def __init__(self, lang: str):
         self.lang = lang
 
 
@@ -37,13 +30,15 @@ class TweetTokenizer:
     """
     Open Twitter files and process the text content.
     """
-    def __init__(self, 
-        language="en",
-        token_pattern=r"\b\w+\b",
-        stopwords=None,
-        remove_hashtags=False,
-        lowercase=True
-        ):
+
+    def __init__(
+        self,
+        language: str = "en",
+        token_pattern: str = r"\b\w+\b",
+        stopwords: Optional[Iterable[str]] = None,
+        remove_hashtags: bool = False,
+        lowercase: bool = True,
+    ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
         There are many options for the token pattern, and the token pattern should be different depending upon your use case.
@@ -67,18 +62,21 @@ class TweetTokenizer:
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
         self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
-        self.REMOVAL_RE = regex.compile("|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE]))
+        self.REMOVAL_RE = regex.compile(
+            "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE])
+        )
         self.WHITESPACE_RE = regex.compile(r"\s+")
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
+        self.stopwords: Optional[Set[str]]
         if stopwords is not None:
             self.stopwords = set(stopwords)
         else:
             self.stopwords = None
         return
 
-    def tokenize(self, tweet):
+    def tokenize(self, tweet: str) -> List[str]:
         """
         :param tweets:
         :return: tokens
@@ -88,11 +86,11 @@ class TweetTokenizer:
 
         # Remove URLs, handles, "RT"
         tweet = self.REMOVAL_RE.sub(" ", tweet)
-        
+
         # Lowercase
         if self.lowercase:
             tweet = tweet.lower()
-        
+
         # Tokenize
         tokens = self.TOKEN_RE.findall(tweet)
 
@@ -101,8 +99,9 @@ class TweetTokenizer:
             tokens = [t for t in tokens if t not in self.stopwords]
         return tokens
 
-
-    def tokenize_tweet_file(self, input_file, sample_size=-1, return_tokens=False):
+    def tokenize_tweet_file(
+        self, input_file: str, sample_size: int = -1, return_tokens: bool = False
+    ) -> Optional[Union[List[str], List[List[str]]]]:
         """
         Return tokenize tweets in file
 
@@ -123,28 +122,36 @@ class TweetTokenizer:
         # Check for empty file
         if num_tweets == 0:
             logging.warning(f"{input_file} has no tweets.")
-            return
+            return None
 
         # Sample from the file's tweets
         if sample_size != -1:
             if sample_size < num_tweets:
                 all_tweet_text = random.sample(all_tweet_text, k=sample_size)
-        
+
         # Tokenize the tweets and return
         # Some tweets have no valid tokens. Skip them.
-        tweet_text = map(self.tokenize, all_tweet_text)
+        tweet_text_ = map(self.tokenize, all_tweet_text)
+        tweet_text: Union[List[str], List[List[str]]]
         if return_tokens:
-            tweet_text = [t for t in tweet_text if t != []]
+            tweet_text = [t for t in tweet_text_ if t != []]
         else:
-            tweet_text = [" ".join(t) for t in tweet_text if t != []]
+            tweet_text = [" ".join(t) for t in tweet_text_ if t != []]
         return tweet_text
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """Command-line parser for use with scripting"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-files", type=str, nargs="+", help="List of GZIP'd Tweet files")
-    parser.add_argument("--sample", type=int, default=-1, help="Number of tweets to use for the keyword counts. Only for Tweet files.")
+    parser.add_argument(
+        "--input-files", type=str, nargs="+", help="List of GZIP'd Tweet files"
+    )
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=-1,
+        help="Number of tweets to use for the keyword counts. Only for Tweet files.",
+    )
     parser.add_argument("--language", choices=["en", "ar"])
     parser.add_argument("--output-dir")
     parser.add_argument("--output-file")
@@ -155,7 +162,8 @@ if __name__ == "__main__":
     args = parse_args()
 
     tokenizer = TweetTokenizer(remove_hashtags=True)
-    tweet_text = tokenizer.tokenize_tweet_file("/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz", sample_size=10)
+    tweet_text = tokenizer.tokenize_tweet_file(
+        "/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz",
+        sample_size=10,
+    )
     print(tweet_text)
-
-

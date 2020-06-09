@@ -102,7 +102,20 @@ The token pattern is extremely important to set for your use case. Below are som
 * `r"\b\w+\b"` matches any token with one or more letters, numbers, and underscores. This is equivalent to `"[\p{L}\_\p{N}]+"`
 * `r"\b\p{L}+\b"` matches any token with one or more "letters" (across all alphabets).
 
-This package is a work in progress. Feel free to open any issues you run into or any feature requests. I started this package as an inbetween for something lighter than Twokenizer but more customizable than NLTK.
+---
+
+This package is a work in progress. Feel free to open any issues you run into or recommend features. I started this package as an inbetween for something lighter than Twokenizer but more customizable than NLTK.
+
+```
+@misc{DeLucia2020,
+    author = {Alexandra DeLucia},
+    title = {Little Bird},
+    year = {2020},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    howpublished = {\url{https://github.com/aadelucia/littlebird}},
+}
+```
 
 Copyright (c) 2020 Alexandra DeLucia
 

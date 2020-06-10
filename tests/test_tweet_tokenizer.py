@@ -56,9 +56,18 @@ class TestTweetTokenizer(unittest.TestCase):
     def test_contraction_expansion(self):
         tokenizer = TweetTokenizer(expand_contractions=True)
         tweet: str = "Why can't I #twerk"
-        right_answer = ["why", "can not", "i", "twerk"]
+        right_answer = ["why", "can", "not", "i", "twerk"]
         tokenized = tokenizer.tokenize(tweet)
         self.assertListEqual(tokenized, right_answer)
+
+
+    def test_apostraphe_preservation(self):
+        tokenizer = TweetTokenizer(token_pattern=r"\b[\w']+\b")
+        tweet: str = "Why can't I ' #twerk '' :'( :')"
+        right_answer = ["why", "can't", "i", "twerk"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+        print(tweet, tokenized)
 
 
 if __name__ == "__main__":

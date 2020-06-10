@@ -8,7 +8,7 @@ import argparse
 import logging
 import random
 
-from typing import Iterable, List, Optional, Set, Union, Dict
+from typing import Iterable, List, Optional, Set, Union
 
 # Third-party imports
 import regex
@@ -24,15 +24,10 @@ class LanguageNotSupportedError(ValueError):
     def __init__(self, lang: str):
         self.lang = lang
 
-#####
 # Settings
-#####
-# Supported languages
-support_langs: [Iterable[str]] = set(["en"])
+supported_langs: [Iterable[str]] = set(["en"])
 
-# List curated by Keith Harriggian
-# Only supports English
-CONTRACTIONS: Dict[str, str] =  { 
+CONTRACTIONS =  { 
     "ain't": "is not",
     "aren't": "are not",
     "can't": "can not",
@@ -155,9 +150,7 @@ CONTRACTIONS: Dict[str, str] =  {
 }
 
 
-#####
 # Define tokenizer class
-#####
 class TweetTokenizer:
     """
     Open Twitter files and process the text content.
@@ -170,7 +163,7 @@ class TweetTokenizer:
         stopwords: Optional[Iterable[str]] = None,
         remove_hashtags: bool = False,
         lowercase: bool = True,
-        expand_contractions: bool = True
+        expand_contractions: bool = False
     ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -202,12 +195,12 @@ class TweetTokenizer:
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
+        self.expand_contractions = expand_contractions
         self.stopwords: Optional[Set[str]]
         if stopwords is not None:
             self.stopwords = set(stopwords)
         else:
             self.stopwords = None
-        self.expand_contractions = expand_contractions
         return
 
     def tokenize(self, tweet: str) -> List[str]:
@@ -224,11 +217,11 @@ class TweetTokenizer:
         # Lowercase
         if self.lowercase:
             tweet = tweet.lower()
-
-        # Remove contractions (only matches lowercase)
+        
+        # Expand contractions
         if self.expand_contractions:
-            for contraction, expanded in CONTRACTIONS.items():
-                tweet = regex.sub(contraction, expanded, tweet)
+            for contraction, expansion in CONTRACTIONS.items():
+                tweet = regex.sub(contraction, expansion, tweet)
 
         # Tokenize
         tokens = self.TOKEN_RE.findall(tweet)
@@ -250,59 +243,5 @@ class TweetTokenizer:
         # Get all tweet content
         all_tweet_text = []
         reader = TweetReader(input_file)
-        for tweet in reader.read_tweets():
-            if "extended_tweet" in tweet:
-                text = tweet["extended_tweet"]["full_text"]
-            else:
-                text = tweet["text"]
-            all_tweet_text.append(text)
-
-        num_tweets = len(all_tweet_text)
-        # Check for empty file
-        if num_tweets == 0:
-            logging.warning(f"{input_file} has no tweets.")
-            return None
-
-        # Sample from the file's tweets
-        if sample_size != -1:
-            if sample_size < num_tweets:
-                all_tweet_text = random.sample(all_tweet_text, k=sample_size)
-
-        # Tokenize the tweets and return
-        # Some tweets have no valid tokens. Skip them.
-        tweet_text_ = map(self.tokenize, all_tweet_text)
-        tweet_text: Union[List[str], List[List[str]]]
-        if return_tokens:
-            tweet_text = [t for t in tweet_text_ if t != []]
-        else:
-            tweet_text = [" ".join(t) for t in tweet_text_ if t != []]
-        return tweet_text
 
 
-def parse_args() -> argparse.Namespace:
-    """Command-line parser for use with scripting"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input-files", type=str, nargs="+", help="List of GZIP'd Tweet files"
-    )
-    parser.add_argument(
-        "--sample",
-        type=int,
-        default=-1,
-        help="Number of tweets to use for the keyword counts. Only for Tweet files.",
-    )
-    parser.add_argument("--language", choices=["en", "ar"])
-    parser.add_argument("--output-dir")
-    parser.add_argument("--output-file")
-    return parser.parse_args()
-
-
-if __name__ == "__main__":
-    args = parse_args()
-
-    tokenizer = TweetTokenizer(remove_hashtags=True)
-    tweet_text = tokenizer.tokenize_tweet_file(
-        "/home/aadelucia/files/minerva/raw_tweets/tweets_en/2014_01_01_MA.gz",
-        sample_size=10,
-    )
-    print(tweet_text)

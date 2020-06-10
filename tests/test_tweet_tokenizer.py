@@ -45,6 +45,12 @@ class TestTweetTokenizer(unittest.TestCase):
         ]
         self.assertListEqual(tokenized, right_answer)
 
+        # Quote handling
+        tweet: str = "If people who are in love together are called \"Love Birds\" then people who always argue together should be called \"Angry Birds\"-happy nw yr"
+        right_answer = ["if", "people", "who", "are", "in", "love", "together", "are", "called", "love", "birds", "then", "people", "who", "always", "argue", "together", "should", "be", "called", "angry", "birds", "happy", "nw", "yr"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+
     def test_supported_langs(self):
         with self.assertRaises(littlebird.tweet_tokenizer.LanguageNotSupportedError):
             tokenizer = TweetTokenizer(language="zxx")
@@ -70,6 +76,25 @@ class TestTweetTokenizer(unittest.TestCase):
 
         tweet: str = "She just wanted to say 'hello'"
         right_answer = ["she", "just", "wanted", "to", "say", "hello"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+        
+        tweet: str = "If people who are in love together are called \"Love Birds\" then people who always argue together should be called \"Angry Birds\"-happy nw yr"
+        right_answer = ["if", "people", "who", "are", "in", "love", "together", "are", "called", "love", "birds", "then", "people", "who", "always", "argue", "together", "should", "be", "called", "angry", "birds", "happy", "nw", "yr"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+
+    def test_remove_ampersand(self):
+        tokenizer = TweetTokenizer()
+        tweet: str = "@dr_m_badawy tnx u so much , the same for u &amp; all the best"
+        right_answer = ["tnx", "u", "so", "much", "the", "same", "for", "u", "all", "the", "best"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+
+    def test_remove_lone_digits(self):
+        tokenizer = TweetTokenizer(remove_lone_digits=True)
+        tweet: str = "luv 4 u"
+        right_answer = ["luv", "u"]
         tokenized = tokenizer.tokenize(tweet)
         self.assertListEqual(tokenized, right_answer)
 

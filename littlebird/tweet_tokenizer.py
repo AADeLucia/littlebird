@@ -164,7 +164,8 @@ class TweetTokenizer:
         stopwords: Optional[Iterable[str]] = None,
         remove_hashtags: bool = False,
         lowercase: bool = True,
-        expand_contractions: bool = False
+        expand_contractions: bool = False,
+        remove_lone_digits: bool = True
     ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -189,14 +190,16 @@ class TweetTokenizer:
         self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
         self.RT_RE = r"\bRT\b"
         self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
+        self.LONE_DIGIT_RE = regex.compile(r"\b\d+\b")
         self.REMOVAL_RE = regex.compile(
-            "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE])
+            "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE, "(&amp)"])
         )
         self.WHITESPACE_RE = regex.compile(r"\s+")
         self.TOKEN_RE = regex.compile(token_pattern)
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
         self.expand_contractions = expand_contractions
+        self.remove_lone_digits = remove_lone_digits
         self.stopwords: Optional[Set[str]]
         if stopwords is not None:
             self.stopwords = set(stopwords)
@@ -223,6 +226,10 @@ class TweetTokenizer:
         if self.expand_contractions:
             for contraction, expansion in CONTRACTIONS.items():
                 tweet = regex.sub(contraction, expansion, tweet)
+
+        # Remove lone digits (e.g. "4")
+        if self.remove_lone_digits:
+            tweet = self.LONE_DIGIT_RE.sub(" ", tweet)
 
         # Tokenize
         tokens = self.TOKEN_RE.findall(tweet)

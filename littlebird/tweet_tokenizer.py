@@ -241,7 +241,7 @@ class TweetTokenizer:
 
     def tokenize_tweet_file(
         self, input_file: str, sample_size: int = -1, return_tokens: bool = False
-    ) -> Optional[Union[List[str], List[List[str]]]]:
+    ) -> Union[List[str], List[List[str]]]:
         """
         Return tokenize tweets in file
 
@@ -251,5 +251,33 @@ class TweetTokenizer:
         # Get all tweet content
         all_tweet_text = []
         reader = TweetReader(input_file)
+        for tweet in reader.read_tweets():
+            if tweet["truncated"]:
+                text = tweet["extended_tweet"]["full_text"]
+            else:
+                text = tweet["text"]
+            all_tweet_text.append(text)
+        
+        # Check for empty file
+        num_tweets = len(all_tweet_text)
+        if num_tweets == 0:
+            return []
+        
+        # Sample from the Tweets
+        # Only need to sample if sample_size > num_tweets
+        if sample_size != -1:
+            if sample_size < num_tweets:
+                all_tweet_text = random.sample(all_tweet_text, k=sample_size)
+
+        # Tokenize the Tweets
+        # Skip the Tweets with only invalid tokens
+        tweet_text = map(self.tokenize, all_tweet_text)
+
+        # Join the tokens into a string if specified
+        if return_tokens:
+            tweet_text = [t for t in tweet_text if t != []]
+        else:
+            tweet_text = [" ".join(t) for t in tweet_text if t != []]
+        return tweet_text
 
 

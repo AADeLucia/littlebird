@@ -102,6 +102,7 @@ The token pattern is extremely important to set for your use case. Below are som
 
 * `r"\b\w+\b"` matches any token with one or more letters, numbers, and underscores. This is equivalent to `"[\p{L}\_\p{N}]+"`
 * `r"\b\p{L}+\b"` matches any token with one or more "letters" (across all alphabets).
+* `r"\b[\w']\b` matches any token with one or more letters, numbers, and underscores. This pattern also preserves apostraphes "'", which is useful for not splitting contractions (e.g. not "can't" -> "can t"). It does not preserve quotes (e.g. "She said 'hello'" -> "she said hello")
 
 ---
 

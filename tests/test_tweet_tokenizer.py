@@ -67,7 +67,11 @@ class TestTweetTokenizer(unittest.TestCase):
         right_answer = ["why", "can't", "i", "twerk"]
         tokenized = tokenizer.tokenize(tweet)
         self.assertListEqual(tokenized, right_answer)
-        print(tweet, tokenized)
+
+        tweet: str = "She just wanted to say 'hello'"
+        right_answer = ["she", "just", "wanted", "to", "say", "hello"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
 
 
 if __name__ == "__main__":

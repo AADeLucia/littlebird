@@ -27,6 +27,7 @@ class LanguageNotSupportedError(ValueError):
 # Settings
 supported_langs: [Iterable[str]] = set(["en"])
 
+# Contraction list curated by Keith Harrigian
 CONTRACTIONS =  { 
     "ain't": "is not",
     "aren't": "are not",

@@ -53,6 +53,15 @@ class TestTweetTokenizer(unittest.TestCase):
         with self.assertRaises(littlebird.tweet_tokenizer.LanguageNotSupportedError):
             tokenizer = TweetTokenizer(language="english")
 
+    def test_contraction_expansion(self):
+        tokenizer = TweetTokenizer(expand_contractions=True)
+        tweet: str = "Why can't I #twerk"
+        right_answer = ["why", "can not", "i", "twerk"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertListEqual(tokenized, right_answer)
+
 
 if __name__ == "__main__":
     unittest.main()
+
+

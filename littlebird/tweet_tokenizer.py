@@ -8,7 +8,7 @@ import argparse
 import logging
 import random
 
-from typing import Iterable, List, Optional, Set, Union
+from typing import Iterable, List, Optional, Set, Union, Dict, Any
 
 # Third-party imports
 import regex
@@ -165,7 +165,8 @@ class TweetTokenizer:
         remove_hashtags: bool = False,
         lowercase: bool = True,
         expand_contractions: bool = False,
-        remove_lone_digits: bool = True
+        remove_lone_digits: bool = True,
+        include_retweet_and_quoted_content: bool = True
     ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -205,7 +206,9 @@ class TweetTokenizer:
             self.stopwords = set(stopwords)
         else:
             self.stopwords = None
+        self.include_retweet_and_quoted_content = include_retweet_and_quoted_content
         return
+
 
     def tokenize(self, tweet: str) -> List[str]:
         """
@@ -239,6 +242,28 @@ class TweetTokenizer:
             tokens = [t for t in tokens if t not in self.stopwords]
         return tokens
 
+    def get_tweet_text(self, tweet: Dict[str, Any]) -> List[str]:
+        """Return all text content from Tweet JSON"""
+        # Check if tweet is truncated
+        if tweet.get("truncated", False):
+            text = tweet["extended_tweet"]["full_text"]
+        else:
+            text = tweet["text"]
+        
+        # Include retweeted/quoted content
+        if self.include_retweet_and_quoted_content:
+            if "quoted_status" in tweet:
+                if tweet["quoted_status"].get("extended_tweet", False):
+                    text += f" {tweet['quoted_status']['extended_tweet']['full_text']}"
+                else:
+                    text += f" {tweet['quoted_status']['text']}"
+            if "retweeted_status" in tweet:
+                if tweet["retweeted_status"].get("extended_tweet", False):
+                    text += f" {tweet['retweeted_status']['extended_tweet']['full_text']}"
+                else:
+                    text += f" {tweet['retweeted_status']['text']}"
+        return text
+
     def tokenize_tweet_file(
         self, input_file: str, sample_size: int = -1, return_tokens: bool = False
     ) -> Union[List[str], List[List[str]]]:
@@ -249,15 +274,9 @@ class TweetTokenizer:
         :param sample_size: size of sample to take of tweets. The sample is min(sample, number of tweets in file)
         """
         # Get all tweet content
-        all_tweet_text = []
         reader = TweetReader(input_file)
-        for tweet in reader.read_tweets():
-            if tweet["truncated"]:
-                text = tweet["extended_tweet"]["full_text"]
-            else:
-                text = tweet["text"]
-            all_tweet_text.append(text)
-        
+        all_tweet_text = list(map(self.get_tweet_text, reader.read_tweets()))
+
         # Check for empty file
         num_tweets = len(all_tweet_text)
         if num_tweets == 0:

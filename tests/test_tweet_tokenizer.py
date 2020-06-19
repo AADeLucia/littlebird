@@ -3,7 +3,7 @@
 Tests for littlebird/tweet_tokenizer.py
 """
 import unittest
-from typing import List
+from typing import List, Dict, Any
 
 import littlebird
 from littlebird import TweetTokenizer
@@ -97,6 +97,24 @@ class TestTweetTokenizer(unittest.TestCase):
         right_answer = ["luv", "u"]
         tokenized = tokenizer.tokenize(tweet)
         self.assertListEqual(tokenized, right_answer)
+
+    def test_get_tweet_text(self):
+        tokenizer = TweetTokenizer()
+        tweet: Dict[str, Any] = {
+            "text": "sample text",
+            "truncated": True,
+            "extended_tweet": {"full_text": "sample text plus more text"},
+            "quoted_status": {"text": "quoted text", "extended_tweet": {"full_text": "quoted text and more text"}},
+            "retweeted_status": {"text": "retweeted text", "extended_tweet": {"full_text": "retweeted text and more text"}}
+        }
+        right_answer = "sample text plus more text quoted text and more text retweeted text and more text"
+        all_text = tokenizer.get_tweet_text(tweet)
+        self.assertEqual(all_text, right_answer)
+
+
+    def test_tokenize_file(self):
+        tokenizer = TweetTokenizer()
+        text = tokenizer.tokenize_tweet_file("demo_tweets.json")
 
 
 if __name__ == "__main__":

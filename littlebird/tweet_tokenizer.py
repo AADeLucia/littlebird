@@ -264,6 +264,16 @@ class TweetTokenizer:
                     text += f" {tweet['retweeted_status']['text']}"
         return text
 
+    def get_tokenized_tweet_text(self, tweet: Dict[str, Any]) -> str:
+        """
+        Convenience method. Returns all tokenized text from the Tweet. 
+        Same as calling "get_tweet_text" and "tokenize" and then joining
+        the token list into a string.
+        """
+        text = self.get_tweet_text(tweet)
+        tokens = self.tokenize(text)
+        return " ".join(tokens)
+
     def tokenize_tweet_file(
         self, input_file: str, sample_size: int = -1, return_tokens: bool = False
     ) -> Union[List[str], List[List[str]]]:

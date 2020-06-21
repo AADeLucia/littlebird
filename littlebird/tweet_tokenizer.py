@@ -166,7 +166,9 @@ class TweetTokenizer:
         lowercase: bool = True,
         expand_contractions: bool = False,
         remove_lone_digits: bool = True,
-        include_retweet_and_quoted_content: bool = True
+        include_retweet_and_quoted_content: bool = True,
+        replace_usernames_with: str = " ",
+        replace_urls_with: str = " "
     ):
         """
         Currently only English and Arabic are support languages ("en" and "ar").
@@ -207,8 +209,8 @@ class TweetTokenizer:
         else:
             self.stopwords = None
         self.include_retweet_and_quoted_content = include_retweet_and_quoted_content
-        return
-
+        self.handle_sub = replace_usernames_with
+        self.url_sub = replace_urls_with
 
     def tokenize(self, tweet: str) -> List[str]:
         """
@@ -218,8 +220,14 @@ class TweetTokenizer:
         if self.remove_hashtags:
             tweet = self.HASHTAG_RE.sub(" ", tweet)
 
-        # Remove URLs, handles, "RT"
-        tweet = self.REMOVAL_RE.sub(" ", tweet)
+        # Replace usernames
+        tweet = self.HANDLE_RE.sub(self.handle_sub, tweet)
+
+        # Replace URLs
+        tweet = self.URL_RE.sub(self.url_sub, tweet)
+
+        # Remove "RT"
+        tweet = self.RT_RE.sub(" ", tweet)
 
         # Lowercase
         if self.lowercase:

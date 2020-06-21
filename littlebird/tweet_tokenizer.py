@@ -198,7 +198,7 @@ class TweetTokenizer:
             "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE, "(&amp)"])
         )
         self.WHITESPACE_RE = regex.compile(r"\s+")
-        self.TOKEN_RE = regex.compile(token_pattern)
+
         self.remove_hashtags = remove_hashtags
         self.lowercase = lowercase
         self.expand_contractions = expand_contractions
@@ -209,8 +209,17 @@ class TweetTokenizer:
         else:
             self.stopwords = None
         self.include_retweet_and_quoted_content = include_retweet_and_quoted_content
+        
         self.handle_sub = replace_usernames_with
         self.url_sub = replace_urls_with
+        
+        # Add handle and URL replacement strings
+        # so they do not get parsed out
+        if self.handle_sub.strip() != "":
+            token_pattern += f"|{self.handle_sub}"
+        if self.url_sub.strip() != "":
+            token_pattern += f"|{self.url_sub}"
+        self.TOKEN_RE = regex.compile(token_pattern)
 
     def tokenize(self, tweet: str) -> List[str]:
         """

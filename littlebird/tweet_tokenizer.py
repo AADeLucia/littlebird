@@ -309,4 +309,28 @@ class TweetTokenizer:
             tweet_text = [" ".join(t) for t in tweet_text if t != []]
         return tweet_text
 
+    def get_hashtags(self, tweet: Dict[str, Any]) -> List[str]:
+        """Return all hashtags in Tweet. Includes hashtags in retweet
+        if option is selected in init.
+        """
+        # Check if tweet is truncated
+        if tweet.get("truncated", False):
+            hashtags = tweet["extended_tweet"]["entities"]["hashtags"]["text"]
+        else:
+            text = tweet["entities"]["hashtags"]["text"]
+        
+        # Include retweeted/quoted content
+        if self.include_retweet_and_quoted_content:
+            if "quoted_status" in tweet:
+                if tweet["quoted_status"].get("extended_tweet", False):
+                    hashtags.extend(tweet["quoted_status"]["extended_tweet"]["entities"]["hashtags"]["text"])
+                else:
+                    hashtags.extend(tweet["quoted_status"]["entities"]["hashtags"]["text"])
+            if "retweeted_status" in tweet:
+                if tweet["retweeted_status"].get("extended_tweet", False):
+                    hashtags.extend(tweet["retweeted_status"]["extended_tweet"]["entities"]["hashtags"]["text"])
+                else:
+                    hashtags.extend(tweet["retweeted_status"]["entities"]["hashtags"]["text"])
+        return hashtags
+
 

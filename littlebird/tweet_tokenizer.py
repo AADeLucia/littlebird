@@ -189,14 +189,11 @@ class TweetTokenizer:
             self.language = language
 
         # Handle pattern from NLTK
-        self.HANDLE_RE = r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)"
-        self.URL_RE = r"http(s)?:\/\/[\w\.\/\?\=]+"
-        self.RT_RE = r"\bRT\b"
+        self.HANDLE_RE = regex.compile(r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)")
+        self.URL_RE = regex.compile(r"http(s)?:\/\/[\w\.\/\?\=]+")
+        self.RT_RE = regex.compile(r"\bRT\b")
         self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
         self.LONE_DIGIT_RE = regex.compile(r"\b\d+\b")
-        self.REMOVAL_RE = regex.compile(
-            "|".join([self.HANDLE_RE, self.URL_RE, self.RT_RE, "(&amp)"])
-        )
         self.WHITESPACE_RE = regex.compile(r"\s+")
 
         self.remove_hashtags = remove_hashtags
@@ -237,6 +234,9 @@ class TweetTokenizer:
 
         # Remove "RT"
         tweet = self.RT_RE.sub(" ", tweet)
+
+        # Remove pesky ampersand
+        tweet = regex.sub("(&amp)", " ", tweet)
 
         # Lowercase
         if self.lowercase:
@@ -332,22 +332,25 @@ class TweetTokenizer:
         """
         # Check if tweet is truncated
         if tweet.get("truncated", False):
-            hashtags = tweet["extended_tweet"]["entities"]["hashtags"]["text"]
+            hashtags = tweet["extended_tweet"]["entities"]["hashtags"]
         else:
-            text = tweet["entities"]["hashtags"]["text"]
+            hashtags = tweet["entities"]["hashtags"]
         
         # Include retweeted/quoted content
         if self.include_retweet_and_quoted_content:
             if "quoted_status" in tweet:
                 if tweet["quoted_status"].get("extended_tweet", False):
-                    hashtags.extend(tweet["quoted_status"]["extended_tweet"]["entities"]["hashtags"]["text"])
+                    hashtags.extend(tweet["quoted_status"]["extended_tweet"]["entities"]["hashtags"])
                 else:
-                    hashtags.extend(tweet["quoted_status"]["entities"]["hashtags"]["text"])
+                    hashtags.extend(tweet["quoted_status"]["entities"]["hashtags"])
             if "retweeted_status" in tweet:
                 if tweet["retweeted_status"].get("extended_tweet", False):
-                    hashtags.extend(tweet["retweeted_status"]["extended_tweet"]["entities"]["hashtags"]["text"])
+                    hashtags.extend(tweet["retweeted_status"]["extended_tweet"]["entities"]["hashtags"])
                 else:
-                    hashtags.extend(tweet["retweeted_status"]["entities"]["hashtags"]["text"])
+                    hashtags.extend(tweet["retweeted_status"]["entities"]["hashtags"])
+        
+        # Only return the text
+        hashtags = [h.get("text") for h in hashtags]
         return hashtags
 
 

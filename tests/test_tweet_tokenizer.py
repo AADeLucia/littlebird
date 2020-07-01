@@ -111,10 +111,15 @@ class TestTweetTokenizer(unittest.TestCase):
         all_text = tokenizer.get_tweet_text(tweet)
         self.assertEqual(all_text, right_answer)
 
+    def test_get_tokenized_tweet_text(self):
+        return
 
     def test_tokenize_file(self):
         tokenizer = TweetTokenizer()
         text = tokenizer.tokenize_tweet_file("demo_tweets.json")
+
+    def test_get_hashtags(self):
+        return
 
 
 if __name__ == "__main__":

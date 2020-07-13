@@ -67,7 +67,6 @@ class TestTweetTokenizer(unittest.TestCase):
         tokenized = tokenizer.tokenize(tweet)
         self.assertListEqual(tokenized, right_answer)
 
-
     def test_apostraphe_preservation(self):
         tokenizer = TweetTokenizer(token_pattern=r"\b[\w']+\b")
         tweet: str = "Why can't I ' #twerk '' :'( :')"
@@ -111,6 +110,19 @@ class TestTweetTokenizer(unittest.TestCase):
         right_answer = "sample text plus more text quoted text and more text retweeted text and more text"
         all_text = tokenizer.get_tweet_text(tweet)
         self.assertEqual(all_text, right_answer)
+
+    def test_url_titles(self):
+        tokenizer = TweetTokenizer()
+        tweet = {"entities": {
+            "urls": [
+                {"url": "http://alexandradelucia.com", "expanded_url": "http://alexandradelucia.com"},
+                {"url": "https://www.washingtonpost.com/news/voraciously/wp/2020/07/13/welcome-to-the-new-buffet-which-isnt-a-buffet-anymore/?utm_campaign=wp_post_most&utm_medium=email&utm_source=newsletter&wpisrc=nl_most", "expanded_url": "https://www.washingtonpost.com/news/voraciously/wp/2020/07/13/welcome-to-the-new-buffet-which-isnt-a-buffet-anymore/?utm_campaign=wp_post_most&utm_medium=email&utm_source=newsletter&wpisrc=nl_most"
+                }
+            ]
+        }}
+        right_answer = ["About · Alexandra DeLucia", "Welcome to the new buffet, which isn’t a buffet anymore - The Washington Post"]
+        parsed_titles = tokenizer.add_url_titles(tweet).get("url_titles")
+        self.assertEqual(right_answer, parsed_titles)
 
     def test_get_tokenized_tweet_text(self):
         return

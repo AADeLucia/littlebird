@@ -11,6 +11,9 @@ from typing import Iterable, List, Optional, Set, Union, Dict, Any
 
 # Third-party imports
 import regex
+import urllib.request
+import urllib.error
+from lxml.html import parse
 
 # Local modules
 from littlebird import TweetReader
@@ -26,12 +29,12 @@ class LanguageNotSupportedError(ValueError):
 
 # Settings
 supported_langs: [Iterable[str]] = set(["en"])
-
+skip_domains = regex.compile(r"(4sq|instagram)\.com")
 
 # Define base tokenizer
 class BaseTweetTokenizer:
-    def __init__(self, include_retweet_and_quoted_content: bool = True):
-        self.include_retweet_and_quoted_content = include_retweet_and_quoted_content
+    def __init__(self, include_retweeted_and_quoted_content: bool = True):
+        self.include_retweeted_and_quoted_content = include_retweeted_and_quoted_content
     
     def tokenize(self, tweet: str) -> List[str]:
         """This should be completed by child classes"""
@@ -46,7 +49,7 @@ class BaseTweetTokenizer:
             text = tweet["text"]
         
         # Include retweeted/quoted content
-        if self.include_retweet_and_quoted_content:
+        if self.include_retweeted_and_quoted_content:
             if "quoted_status" in tweet:
                 if tweet["quoted_status"].get("extended_tweet", False):
                     text += f" {tweet['quoted_status']['extended_tweet']['full_text']}"
@@ -115,7 +118,7 @@ class BaseTweetTokenizer:
             hashtags = tweet["entities"]["hashtags"]
         
         # Include retweeted/quoted content
-        if self.include_retweet_and_quoted_content:
+        if self.include_retweeted_and_quoted_content:
             if "quoted_status" in tweet:
                 if tweet["quoted_status"].get("extended_tweet", False):
                     hashtags.extend(tweet["quoted_status"]["extended_tweet"]["entities"]["hashtags"])
@@ -130,6 +133,57 @@ class BaseTweetTokenizer:
         # Only return the text
         hashtags = [h.get("text") for h in hashtags]
         return hashtags
+
+    def add_url_titles(self, tweet: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add the URL title from the tweet to a new field: "url_titles"
+        Does not include a field if there are no URLs.
+        """
+        # Check if tweet is truncated
+        if tweet.get("truncated", False):
+            urls = tweet["extended_tweet"]["entities"]["urls"]
+        else:
+            urls = tweet["entities"]["urls"]
+        
+        # Include retweeted/quoted content
+        if self.include_retweeted_and_quoted_content:
+            if "quoted_status" in tweet:
+                if tweet["quoted_status"].get("extended_tweet", False):
+                    urls.extend(tweet["quoted_status"]["extended_tweet"]["entities"]["urls"])
+                else:
+                    urls.extend(tweet["quoted_status"]["entities"]["urls"])
+            if "retweeted_status" in tweet:
+                if tweet["retweeted_status"].get("extended_tweet", False):
+                    urls.extend(tweet["retweeted_status"]["extended_tweet"]["entities"]["urls"])
+                else:
+                    urls.extend(tweet["retweeted_status"]["entities"]["urls"])
+        
+        # Return original tweet if there are no urls
+        if len(urls) != 0:
+            # Get expanded URL from url objects
+            # Skip URLs from commonly forbidden domains
+            urls = [i.get("expanded_url") for i in urls if not skip_domains.search(i.get("expanded_url"))]
+
+            # Collect titles from URLs
+            titles = []
+            for link in urls:
+                try:
+                    resp = urllib.request.urlopen(link)
+                except (ValueError, urllib.error.URLError, ConnectionResetError) as err:
+                    logging.error(f"Could not parse URL {link}: {err}")
+                    continue
+                except urllib.error.HTTPError as err:
+                    if "429" in err:
+                        time.sleep(10)
+                        resp = urllib.request.urlopen(link)
+                    continue
+
+                titles.append(parse(resp).find(".//title").text)
+            # Check for valid titles
+            if len(titles) != 0:
+                tweet["url_titles"] = titles
+        return tweet
+
 
 # Define tokenizer class
 class TweetTokenizer(BaseTweetTokenizer):
@@ -146,7 +200,7 @@ class TweetTokenizer(BaseTweetTokenizer):
         lowercase: bool = True,
         expand_contractions: bool = False,
         remove_lone_digits: bool = True,
-        include_retweet_and_quoted_content: bool = True,
+        include_retweeted_and_quoted_content: bool = True,
         replace_usernames_with: str = " ",
         replace_urls_with: str = " "
     ):
@@ -163,7 +217,7 @@ class TweetTokenizer(BaseTweetTokenizer):
         URL pattern: r"http(s)?:\/\/[\w\.\/\?\=]+" 
         """
         # Initialize base class
-        super().__init__(include_retweet_and_quoted_content)
+        super().__init__(include_retweeted_and_quoted_content)
         
         # Current compatibility
         if language not in supported_langs:
@@ -247,9 +301,9 @@ class GloVeTweetTokenizer(BaseTweetTokenizer):
     Tokenizer that tokenizes like the GloVe pre-processor. 
     Original Ruby script here: https://nlp.stanford.edu/projects/glove/preprocess-twitter.rb
     """
-    def __init__(self, include_retweet_and_quoted_content: bool = True):
+    def __init__(self, include_retweeted_and_quoted_content: bool = True):
         # Initialize base class
-        super().__init__(include_retweet_and_quoted_content)
+        super().__init__(include_retweeted_and_quoted_content)
         
         self.URL_RE = regex.compile(r"https?:\/\/\S+\b|www\.(\w+\.)+\S*")
         self.HANDLE_RE = regex.compile(r"@\w+")

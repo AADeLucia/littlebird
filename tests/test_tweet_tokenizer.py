@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 
 import littlebird
 from littlebird import TweetTokenizer
+from littlebird import GloVeTweetTokenizer
 
 
 class TestTweetTokenizer(unittest.TestCase):
@@ -120,6 +121,64 @@ class TestTweetTokenizer(unittest.TestCase):
 
     def test_get_hashtags(self):
         return
+
+
+class TestGloVeTweetTokenizer(unittest.TestCase):
+    def test_uppercase_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "OMG HAPPY"
+        right_answer = ["omg", "<allcaps>", "happy", "<allcaps>"]
+        self.assertEqual(tokenizer.tokenize(tweet), right_answer)
+
+    def test_hashtag_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "#splitMe #donotsplitme #UPPERCASE"
+        right_answer = ["<hashtag>", "split", "me", "<hashtag>", "donotsplitme", "<hashtag>", "uppercase", "<allcaps>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+    
+    def test_emoji_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = ":D :d 8) 8-( :'/ :/ <3 ;) ;p"
+        right_answer = ["<smile>", "<smile>", "<smile>", "<sadface>", "<neutralface>", 
+            "<neutralface>", "<heart>", "<smile>", "<lolface>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+
+    def test_punctuation_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "hello there!!!"
+        right_answer = ["hello", "there", "!", "<repeat>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+
+    def test_word_elongation_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "hellooooooo"
+        right_answer = ["hello", "<elong>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+ 
+    def test_number_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "this is a Number 40"
+        right_answer = ["this", "is", "a", "number", "<number>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+ 
+    def test_url_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "Check out this link http://t.co/dkfjkdf"
+        right_answer = ["check", "out", "this", "link", "<url>"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+    
+    def test_slash_split_handling(self):
+        tokenizer = GloVeTweetTokenizer()
+        tweet = "don't you wish this/that"
+        right_answer = ["don't", "you", "wish", "this", "/", "that"]
+        tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-General utilities to open a Twitter file.
+Tokenizes tweets either directly from a file or just from the passed-in text.
 
 Author: Alexandra DeLucia
 """
@@ -7,7 +7,6 @@ Author: Alexandra DeLucia
 import argparse
 import logging
 import random
-
 from typing import Iterable, List, Optional, Set, Union, Dict, Any
 
 # Third-party imports
@@ -15,6 +14,7 @@ import regex
 
 # Local modules
 from littlebird import TweetReader
+from littlebird import CONTRACTIONS
 
 # Configurations
 logging.basicConfig(level=logging.INFO)
@@ -27,239 +27,17 @@ class LanguageNotSupportedError(ValueError):
 # Settings
 supported_langs: [Iterable[str]] = set(["en"])
 
-# Contraction list curated by Keith Harrigian
-CONTRACTIONS =  { 
-    "ain't": "is not",
-    "aren't": "are not",
-    "can't": "can not",
-    "can't've": "can not have",
-    "cannot": "can not",
-    "'cause": "because",
-    "could've": "could have",
-    "couldn't": "could not",
-    "couldn't've": "could not have",
-    "didn't": "did not",
-    "doesn't": "does not",
-    "don't": "do not",
-    "hadn't": "had not",
-    "hadn't've": "had not have",
-    "hasn't": "has not",
-    "haven't": "have not",
-    "he'd": "he would",
-    "he'd've": "he would have",
-    "he'll": "he will",
-    "he'll've": "he will have",
-    "he's": "he is",
-    "how'd": "how did",
-    "how'd'y": "how do you",
-    "how'll": "how will",
-    "how's": "how is",
-    "i'd": "i would",
-    "i'd've": "i would have",
-    "i'll": "i will",
-    "i'll've": "i will have",
-    "i'm": "i am",
-    "i've": "i have",
-    "isn't": "is not",
-    "it'd": "it would",
-    "it'd've": "it would have",
-    "it'll": "it will",
-    "it'll've": "it will have",
-    "it's": "it is",
-    "let's": "let us",
-    "ma'am": "madam",
-    "mayn't": "may not",
-    "might've": "might have",
-    "mightn't": "might not",
-    "mightn't've": "might not have",
-    "must've": "must have",
-    "mustn't": "must not",
-    "mustn't've": "must not have",
-    "needn't": "need not",
-    "needn't've": "need not have",
-    "o'clock": "of the clock",
-    "oughtn't": "ought not",
-    "oughtn't've": "ought not have",
-    "shan't": "shall not",
-    "sha'n't": "shall not",
-    "shan't've": "shall not have",
-    "she'd": "she would",
-    "she'd've": "she would have",
-    "she'll": "she will",
-    "she'll've": "she will have",
-    "she's": "she is",
-    "should've": "should have",
-    "shouldn't": "should not",
-    "shouldn't've": "should not have",
-    "so've": "so have",
-    "so's": "so is",
-    "that'd": "that would",
-    "that'd've": "that would have",
-    "that's": "that is",
-    "there'd": "there would",
-    "there'd've": "there would have",
-    "there's": "there is",
-    "they'd": "they would",
-    "they'd've": "they would have",
-    "they'll": "they will",
-    "they'll've": "they will have",
-    "they're": "they are",
-    "they've": "they have",
-    "to've": "to have",
-    "wasn't": "was not",
-    "we'd": "we would",
-    "we'd've": "we would have",
-    "we'll": "we will",
-    "we'll've": "we will have",
-    "we're": "we are",
-    "we've": "we have",
-    "weren't": "were not",
-    "what'll": "what will",
-    "what'll've": "what will have",
-    "what're": "what are",
-    "what's": "what is",
-    "what've": "what have",
-    "when's": "when is",
-    "when've": "when have",
-    "where'd": "where did",
-    "where's": "where is",
-    "where've": "where have",
-    "who'll": "who will",
-    "who'll've": "who will have",
-    "who's": "who is",
-    "who've": "who have",
-    "why's": "why is",
-    "why've": "why have",
-    "will've": "will have",
-    "won't": "will not",
-    "won't've": "will not have",
-    "would've": "would have",
-    "wouldn't": "would not",
-    "wouldn't've": "would not have",
-    "y'all": "you all",
-    "y'all'd": "you all would",
-    "y'all'd've": "you all would have",
-    "y'all're": "you all are",
-    "y'all've": "you all have",
-    "you'd": "you would",
-    "you'd've": "you would have",
-    "you'll": "you will",
-    "you'll've": "you will have",
-    "you're": "you are",
-    "you've": "you have",
-    "that'll": "that will",
-}
 
-
-# Define tokenizer class
-class TweetTokenizer:
-    """
-    Open Twitter files and process the text content.
-    """
-
-    def __init__(
-        self,
-        language: str = "en",
-        token_pattern: str = r"\b\w+\b",
-        stopwords: Optional[Iterable[str]] = None,
-        remove_hashtags: bool = False,
-        lowercase: bool = True,
-        expand_contractions: bool = False,
-        remove_lone_digits: bool = True,
-        include_retweet_and_quoted_content: bool = True,
-        replace_usernames_with: str = " ",
-        replace_urls_with: str = " "
-    ):
-        """
-        Currently only English and Arabic are support languages ("en" and "ar").
-        There are many options for the token pattern, and the token pattern should be different depending upon your use case.
-        Default: r"\b\w+\b"
-        Only letters: "\p{L}+"
-        Letters and numbers: "[\p{L}\p{N}]+"
-        Starts with a letter but can contain numbers: "\p{L}[\p{L}\p{N}]+"
-        The default stopwords None does not remove stopwords
-        User handle pattern: r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_])    {20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-    z0-9_]*@)"
-        Retweet pattern: r"\bRT\b"
-        URL pattern: r"http(s)?:\/\/[\w\.\/\?\=]+" 
-        """
-        # Current compatibility
-        if language not in supported_langs:
-            raise LanguageNotSupportedError(language)
-        else:
-            self.language = language
-
-        # Handle pattern from NLTK
-        self.HANDLE_RE = regex.compile(r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)")
-        self.URL_RE = regex.compile(r"http(s)?:\/\/[\w\.\/\?\=]+")
-        self.RT_RE = regex.compile(r"\bRT\b")
-        self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
-        self.LONE_DIGIT_RE = regex.compile(r"\b\d+\b")
-        self.WHITESPACE_RE = regex.compile(r"\s+")
-
-        self.remove_hashtags = remove_hashtags
-        self.lowercase = lowercase
-        self.expand_contractions = expand_contractions
-        self.remove_lone_digits = remove_lone_digits
-        self.stopwords: Optional[Set[str]]
-        if stopwords is not None:
-            self.stopwords = set(stopwords)
-        else:
-            self.stopwords = None
+# Define base tokenizer
+class BaseTweetTokenizer:
+    def __init__(self, include_retweet_and_quoted_content: bool = True):
         self.include_retweet_and_quoted_content = include_retweet_and_quoted_content
-        
-        self.handle_sub = replace_usernames_with
-        self.url_sub = replace_urls_with
-        
-        # Add handle and URL replacement strings
-        # so they do not get parsed out
-        if self.handle_sub.strip() != "":
-            token_pattern += f"|{self.handle_sub}"
-        if self.url_sub.strip() != "":
-            token_pattern += f"|{self.url_sub}"
-        self.TOKEN_RE = regex.compile(token_pattern)
-
+    
     def tokenize(self, tweet: str) -> List[str]:
-        """
-        :param tweets:
-        :return: tokens
-        """
-        if self.remove_hashtags:
-            tweet = self.HASHTAG_RE.sub(" ", tweet)
-
-        # Replace usernames
-        tweet = self.HANDLE_RE.sub(self.handle_sub, tweet)
-
-        # Replace URLs
-        tweet = self.URL_RE.sub(self.url_sub, tweet)
-
-        # Remove "RT"
-        tweet = self.RT_RE.sub(" ", tweet)
-
-        # Remove pesky ampersand
-        tweet = regex.sub("(&amp)", " ", tweet)
-
-        # Lowercase
-        if self.lowercase:
-            tweet = tweet.lower()
-        
-        # Expand contractions
-        if self.expand_contractions:
-            for contraction, expansion in CONTRACTIONS.items():
-                tweet = regex.sub(contraction, expansion, tweet)
-
-        # Remove lone digits (e.g. "4")
-        if self.remove_lone_digits:
-            tweet = self.LONE_DIGIT_RE.sub(" ", tweet)
-
-        # Tokenize
-        tokens = self.TOKEN_RE.findall(tweet)
-
-        # Remove stopwords
-        if self.stopwords:
-            tokens = [t for t in tokens if t not in self.stopwords]
-        return tokens
-
-    def get_tweet_text(self, tweet: Dict[str, Any]) -> List[str]:
+        """This should be completed by child classes"""
+        pass
+    
+    def get_tweet_text(self, tweet: Dict[str, Any]) -> str:
         """Return all text content from Tweet JSON"""
         # Check if tweet is truncated
         if tweet.get("truncated", False):
@@ -325,7 +103,7 @@ class TweetTokenizer:
         else:
             tweet_text = [" ".join(t) for t in tweet_text if t != []]
         return tweet_text
-
+    
     def get_hashtags(self, tweet: Dict[str, Any]) -> List[str]:
         """Return all hashtags in Tweet. Includes hashtags in retweet
         if option is selected in init.
@@ -352,5 +130,200 @@ class TweetTokenizer:
         # Only return the text
         hashtags = [h.get("text") for h in hashtags]
         return hashtags
+
+# Define tokenizer class
+class TweetTokenizer(BaseTweetTokenizer):
+    """
+    Open Twitter files and process the text content.
+    """
+
+    def __init__(
+        self,
+        language: str = "en",
+        token_pattern: str = r"\b\w+\b",
+        stopwords: Optional[Iterable[str]] = None,
+        remove_hashtags: bool = False,
+        lowercase: bool = True,
+        expand_contractions: bool = False,
+        remove_lone_digits: bool = True,
+        include_retweet_and_quoted_content: bool = True,
+        replace_usernames_with: str = " ",
+        replace_urls_with: str = " "
+    ):
+        """
+        Currently only English and Arabic are support languages ("en" and "ar").
+        There are many options for the token pattern, and the token pattern should be different depending upon your use case.
+        Default: r"\b\w+\b"
+        Only letters: "\p{L}+"
+        Letters and numbers: "[\p{L}\p{N}]+"
+        Starts with a letter but can contain numbers: "\p{L}[\p{L}\p{N}]+"
+        The default stopwords None does not remove stopwords
+        User handle pattern: r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_])    {20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-    z0-9_]*@)"
+        Retweet pattern: r"\bRT\b"
+        URL pattern: r"http(s)?:\/\/[\w\.\/\?\=]+" 
+        """
+        # Initialize base class
+        super().__init__(include_retweet_and_quoted_content)
+        
+        # Current compatibility
+        if language not in supported_langs:
+            raise LanguageNotSupportedError(language)
+        else:
+            self.language = language
+
+        # Handle pattern from NLTK
+        self.HANDLE_RE = regex.compile(r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)")
+        self.URL_RE = regex.compile(r"http(s)?:\/\/[\w\.\/\?\=]+")
+        self.RT_RE = regex.compile(r"\bRT\b")
+        self.HASHTAG_RE = regex.compile(r"#[\p{L}\p{N}_]+")
+        self.LONE_DIGIT_RE = regex.compile(r"\b\d+\b")
+        self.WHITESPACE_RE = regex.compile(r"\s+")
+
+        self.remove_hashtags = remove_hashtags
+        self.lowercase = lowercase
+        self.expand_contractions = expand_contractions
+        self.remove_lone_digits = remove_lone_digits
+        self.stopwords: Optional[Set[str]]
+        if stopwords is not None:
+            self.stopwords = set(stopwords)
+        else:
+            self.stopwords = None
+        
+        self.handle_sub = replace_usernames_with
+        self.url_sub = replace_urls_with
+        
+        # Add handle and URL replacement strings
+        # so they do not get parsed out
+        if self.handle_sub.strip() != "":
+            token_pattern += f"|{self.handle_sub}"
+        if self.url_sub.strip() != "":
+            token_pattern += f"|{self.url_sub}"
+        self.TOKEN_RE = regex.compile(token_pattern)
+
+    def tokenize(self, tweet: str) -> List[str]:
+        """
+        :param tweets:
+        :return: tokens
+        """
+        if self.remove_hashtags:
+            tweet = self.HASHTAG_RE.sub(" ", tweet)
+
+        # Replace usernames
+        tweet = self.HANDLE_RE.sub(self.handle_sub, tweet)
+
+        # Replace URLs
+        tweet = self.URL_RE.sub(self.url_sub, tweet)
+
+        # Remove "RT"
+        tweet = self.RT_RE.sub(" ", tweet)
+
+        # Remove pesky ampersand
+        tweet = regex.sub("(&amp)", " ", tweet)
+
+        # Lowercase
+        if self.lowercase:
+            tweet = tweet.lower()
+        
+        # Expand contractions
+        if self.expand_contractions:
+            for contraction, expansion in CONTRACTIONS.items():
+                tweet = regex.sub(contraction, expansion, tweet)
+
+        # Remove lone digits (e.g. "4")
+        if self.remove_lone_digits:
+            tweet = self.LONE_DIGIT_RE.sub(" ", tweet)
+
+        # Tokenize
+        tokens = self.TOKEN_RE.findall(tweet)
+
+        # Remove stopwords
+        if self.stopwords:
+            tokens = [t for t in tokens if t not in self.stopwords]
+        return tokens
+
+
+class GloVeTweetTokenizer(BaseTweetTokenizer):
+    """
+    Tokenizer that tokenizes like the GloVe pre-processor. 
+    Original Ruby script here: https://nlp.stanford.edu/projects/glove/preprocess-twitter.rb
+    """
+    def __init__(self, include_retweet_and_quoted_content: bool = True):
+        # Initialize base class
+        super().__init__(include_retweet_and_quoted_content)
+        
+        self.URL_RE = regex.compile(r"https?:\/\/\S+\b|www\.(\w+\.)+\S*")
+        self.HANDLE_RE = regex.compile(r"@\w+")
+        self.NUMBER_RE = regex.compile(r"[-+]?[.\d]*[\d]+[:,.\d]*")
+        self.HASHTAG_RE = regex.compile(r"#(\S+)")
+        self.PUNCTUATION_RE = regex.compile(r"([!?.]){2,}")
+        self.ELONG_RE = regex.compile(r"\b(\S*?)(.)\2{2,}\b")
+        self.UPPER_TOKEN_RE = regex.compile(r"([A-Z]{2,})")
+
+        # Emojis
+        self.EMOJI_EYES = "[8:=;]"
+        self.EMOJI_NOSE = "['`\-]?"
+        self.EMOJI_SMILE_RE = regex.compile(self.EMOJI_EYES + self.EMOJI_NOSE + "[)dD]+|[)dD]+" + self.EMOJI_EYES + self.EMOJI_NOSE)
+        self.EMOJI_LOL_RE = regex.compile(self.EMOJI_EYES + self.EMOJI_NOSE + "[pP]+")
+        self.EMOJI_SAD_RE = regex.compile(self.EMOJI_EYES + self.EMOJI_NOSE + "\(+|\)+" + self.EMOJI_NOSE + self.EMOJI_EYES)
+        self.EMOJI_NEUTRAL_RE = regex.compile(self.EMOJI_EYES + self.EMOJI_NOSE + "[\/|l*]")
+        self.EMOJI_HEART_RE = regex.compile(r"<3")
+
+    def tokenize(self, tweet: str) -> List[str]:
+        # Replace URLs
+        tweet = self.URL_RE.sub("<url>", tweet)
+        
+        # Replace emojis
+        tweet = self.EMOJI_SMILE_RE.sub("<smile>", tweet)
+        tweet = self.EMOJI_LOL_RE.sub("<lolface>", tweet)
+        tweet = self.EMOJI_SAD_RE.sub("<sadface>", tweet)
+        tweet = self.EMOJI_NEUTRAL_RE.sub("<neutralface>", tweet)
+        tweet = self.EMOJI_HEART_RE.sub("<heart>", tweet)
+        
+        # From script: Force splitting words appended with slashes (once we tokenized the URLs, of course)
+        tweet = regex.sub("/", " / ", tweet)
+
+        # Replace handles
+        tweet = self.HANDLE_RE.sub("<user>", tweet)
+
+        # Replace numbers
+        tweet = self.NUMBER_RE.sub("<number>", tweet)
+
+        # Find all hashtags
+        # Split hashtags into their subword components if possible
+        tweet = self.HASHTAG_RE.sub(self._replace_hashtags, tweet)
+        
+        # Mark repeating punctuation
+        # eg. "!!!" => "! <REPEAT>"
+        tweet = self.PUNCTUATION_RE.sub(r" \1 <repeat> ", tweet)
+
+        # Mark elongated words 
+        # eg. "wayyyy" => "way <ELONG>"
+        tweet = self.ELONG_RE.sub(r"\1\2 <elong> ", tweet)
+ 
+        # Mark all uppercased tokens with <ALLCAPS>
+        tweet = self.UPPER_TOKEN_RE.sub(self._replace_uppercase_tokens, tweet)
+        
+        # Lowercase all tokens
+        tweet = tweet.lower()
+
+        return tweet.split()
+    
+    def _replace_hashtags(self, match) -> str:
+        """
+        Returns a re-formatted version of the matched hashtag
+        """
+        hashtag = match.group(1)
+        if hashtag.isupper():
+            return f" <hashtag> {hashtag.lower()} <allcaps> "
+        else:
+            subwords = " ".join(regex.split(r"(?=[A-Z])", hashtag))
+            return f" <hashtag> {subwords.lower()} "
+
+    def _replace_uppercase_tokens(self, match) -> str:
+        """
+        Returns a lowercase string from the passed regex match object.
+        """
+        token = match.group(0)
+        return token.lower() + " <allcaps> "
 
 

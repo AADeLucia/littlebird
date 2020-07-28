@@ -14,7 +14,7 @@ import regex
 import urllib.request
 import urllib.error
 from lxml.html import parse
-from nltk.tokenize import TweetTokenizer
+from nltk.tokenize import TweetTokenizer as NLTKTweetTokenizer
 from emoji import demojize
 
 # Local modules
@@ -392,15 +392,27 @@ class BERTweetTokenizer(BaseTweetTokenizer):
     def __init__(self, include_retweeted_and_quoted_content: bool = True):
         # Initialize base class
         super().__init__(include_retweeted_and_quoted_content)
-        self.nltk_tokenizer = TweetTokenizer()
+        self.nltk_tokenizer = NLTKTweetTokenizer()
 
     def tokenize(self, tweet: str) -> List[str]:
-        tokens = tokenizer.tokenize(tweet.replace("’", "'").replace("…", "..."))
-        normTweet = " ".join([normalizeToken(token) for token in tokens])
+        tokens = self.nltk_tokenizer.tokenize(tweet.replace("’", "'").replace("…", "..."))
+        normTweet = " ".join(map(self.normalize_token, tokens))
 
-        normTweet = normTweet.replace("cannot ", "can not ").replace("n't ", " n't ").replace("n 't ", " n't ").replace("ca n't", "can't").replace("ai n't", "ain't")
-        normTweet = normTweet.replace("'m ", " 'm ").replace("'re ", " 're ").replace("'s ", " 's ").replace("'ll ", " 'll ").replace("'d ", " 'd ").replace("'ve ", " 've ")
-        normTweet = normTweet.replace(" p . m .", "  p.m.") .replace(" p . m ", " p.m ").replace(" a . m .", " a.m.").replace(" a . m ", " a.m ")
+        normTweet = normTweet.replace("cannot ", "can not ")\
+            .replace("n't ", " n't ")\
+            .replace("n 't ", " n't ")\
+            .replace("ca n't", "can't")\
+            .replace("ai n't", "ain't")\
+            .replace("'m ", " 'm ")\
+            .replace("'re ", " 're ")\
+            .replace("'s ", " 's ")\
+            .replace("'ll ", " 'll ")\
+            .replace("'d ", " 'd ")\
+            .replace("'ve ", " 've ")\
+            .replace(" p . m .", "  p.m.")\
+            .replace(" p . m ", " p.m ")\
+            .replace(" a . m .", " a.m.")\
+            .replace(" a . m ", " a.m ")
 
         normTweet = regex.sub(r",([0-9]{2,4}) , ([0-9]{2,4})", r",\1,\2", normTweet)
         normTweet = regex.sub(r"([0-9]{1,3}) / ([0-9]{2,4})", r"\1/\2", normTweet)

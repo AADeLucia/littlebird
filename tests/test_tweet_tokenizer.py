@@ -8,6 +8,9 @@ from typing import List, Dict, Any
 import littlebird
 from littlebird import TweetTokenizer
 from littlebird import GloVeTweetTokenizer
+from littlebird import BERTweetTokenizer
+
+from BERTweetNormalizer import normalizeTweet
 
 
 class TestTweetTokenizer(unittest.TestCase):
@@ -190,6 +193,14 @@ class TestGloVeTweetTokenizer(unittest.TestCase):
         tweet = "don't you wish this/that"
         right_answer = ["don't", "you", "wish", "this", "/", "that"]
         tokenized = tokenizer.tokenize(tweet)
+        self.assertEqual(tokenized, right_answer)
+
+class TestBERTweetTokenizer(unittest.TestCase):
+    def test(self):
+        tokenizer = BERTweetTokenizer()
+        tweet = "SC has first two presumptive cases of coronavirus, DHEC confirms https://postandcourier.com/health/covid19/sc-has-first-two-presumptive-cases-of-coronavirus-dhec-confirms/article_bddfe4ae-5fd3-11ea-9ce4-5f495366cee6.html?utm_medium=social&utm_source=twitter&utm_campaign=user-share… via @postandcourier" 
+        tokenized = tokenizer.tokenize(tweet)
+        right_answer = normalizeTweet(tweet).split()
         self.assertEqual(tokenized, right_answer)
 
 

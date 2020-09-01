@@ -50,8 +50,21 @@ writer = TweetWriter("filtered.json")
 writer.write(filtered_tweets)
 ```
 
+You can also skip retweeted and quoted statuses
+
+```python
+for tweet in reader.read_tweets(skip_retweeted_and_quoted=True):
+```
 
 ## Tokenize Tweets
+
+There are multiple pre-defined tokenizers that are useful for different downstream usecases.
+
+* **TweetTokenizer**: default customizable tokenizer
+* **BERTweetTokenizer**: tokenizer based off the original BERTweet pre-processing from [the BERTweet model repo](https://github.com/VinAIResearch/BERTweet).
+* **GloVeTweetTokenizer**: tokenizer based off a modified version of the [GloVe](https://nlp.stanford.edu/projects/glove/) preprocessor. It's based off of a modified version because the [original ruby processing script](https://nlp.stanford.edu/projects/glove/preprocess-twitter.rb) does not work.
+
+You can also write your own tokenizer. Examples are below.
 
 ### Example usage
 A basic example using the default Tokenizer settings is below.
@@ -64,17 +77,32 @@ tweet_file = "2014_01_02.json.gz"
 reader = TweetReader(tweet_file)
 tokenizer = TweetTokenizer()
 
-# Iterate over Tweets
-# Make sure to check for the "truncated" field otherwise you will only access the 
-# 140 character Tweet, not the full 280 character message
+# Iterate over tweets and get the tokenized text.
+# Automatically checks for retweeted and quoted text except if
+# tokenizer = TweetTokenizer(include_retweeted_and_quoted_content=False)
 for tweet in reader.read_tweets():
-    if tweet.get("truncated", False):
-        text = tweet["extended_tweet"]["full_text"]
-    else:
-        text = tweet["text"]
-    
     # Tokenize the Tweet's text
-    tokens = tokenizer.tokenize(text)
+    tokens = tokenizer.get_tokenized_tweet_text(tweet)
+
+    # Get tweet hashtags. Also includes hashtags from retweeted and quoted statuses
+    hashtags = tokenizer.get_hashtags(tweet)
+```
+
+You can directly access the internal `tokenize` method with `tokenizer.tokenize(text)`.
+
+Tokenize all the tweets from a file. Automatically gets the text from the the entire tweet.
+
+```python
+from littlebird import TweetTokenizer
+
+tweet_file = "2014_01_02.json.gz"
+tokenizer = TweetTokenizer()
+
+# Returns a tokenized string for each tweet
+tokenized_tweets = tokenizer.tokenize_tweet_file(tweet_file)
+
+# Returns a list of tokens for each tweet
+tokenized_tweets = tokenizer.tokenize_tweet_file(tweet_file, return_tokens=True)
 ```
 
 ### Tokenizer settings
@@ -104,9 +132,35 @@ The token pattern is extremely important to set for your use case. Below are som
 * `r"\b\p{L}+\b"` matches any token with one or more "letters" (across all alphabets).
 * `r"\b[\w']\b` matches any token with one or more letters, numbers, and underscores. This pattern also preserves apostraphes "'", which is useful for not splitting contractions (e.g. not "can't" -> "can t"). It does not preserve quotes (e.g. "She said 'hello'" -> "she said hello")
 
+
+### Writing your own tokenizer
+
+If you would like to write your own, simply extend the `BaseTweetTokenizer` class. See below and `tweet_tokenizer.py` for examples.
+
+```python
+from littlebird import BaseTweetTokenizer
+
+class NewTweetTokenizer(BaseTweetTokenizer):
+    def __init__(self, include_retweeted_and_quoted_content = True):
+        # Initialize super class
+        super().__init__(include_retweeted_and_quoted_content)
+
+        # Define class variables and settings
+        self.token_pattern = "aa*"
+
+    # Overwrite the tokenize method
+    def tokenize(self, tweet):
+        regex.findall(self.token_pattern, tweet)
+        return 
+    
+    # Define any helper methods as needed
+    def _helper(self):
+        return
+```
+
 ---
 
-This package is a work in progress. Feel free to open any issues you run into or recommend features. I started this package as an inbetween for something lighter than Twokenizer but more customizable than NLTK.
+This package is a work in progress. Feel free to open any issues you run into or recommend features. I started this package for my own NLP research with tweets. 
 
 ```
 @misc{DeLucia2020,

@@ -90,7 +90,7 @@ for tweet in reader.read_tweets():
 
 You can directly access the internal `tokenize` method with `tokenizer.tokenize(text)`.
 
-Tokenize all the tweets from a file. Automatically gets the text from the the entire tweet.
+If you do not need to skip over tweets and only need the text, then you can use the `tokenize_tweet_file()` method. This method gets the tokenized text from the entire tweet (retweet, quoted, and full text). 
 
 ```python
 from littlebird import TweetTokenizer

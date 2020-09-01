@@ -5,6 +5,7 @@ Author: Alexandra DeLucia
 """
 # Standard imports
 import logging
+import os
 import sys
 import gzip
 import zlib
@@ -25,12 +26,19 @@ class TweetReader:
     def __init__(self, filename: str):
         self.path = filename
 
+        # Check if file exists
+        if not os.path.exists(self.path):
+            logging.error(f"File {self.path} does not exist.")
+            sys.exit(1)
+        
+        # Get filetype
         try:
             self.ftype = filetype.guess(filename).extension
         except AttributeError as err:
             # filetype could not be determined
             self.ftype = None
-
+        
+        # Open file
         try:
             if self.ftype == "gz":
                 self.f = gzip.open(filename, "r")
@@ -40,10 +48,15 @@ class TweetReader:
             logging.error(f"Issue opening {filename}:\n{err}")
             sys.exit(1)
 
-    def read_tweets(self) -> Iterable[Any]:
+    def read_tweets(self,
+        skip_retweeted_and_quoted: bool = False
+    ) -> Iterable[Any]:
         try:
             with jl.Reader(self.f) as reader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
+                    if skip_retweeted_and_quoted:
+                        if "quoted_status" in tweet or "retweeted_status" in tweet:
+                            continue
                     yield tweet
         except (UnicodeDecodeError, gzip.BadGzipFile, zlib.error) as err:
             logging.error(f"Error reading {self.path} of type {self.ftype}: {err}")

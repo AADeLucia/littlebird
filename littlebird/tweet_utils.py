@@ -49,14 +49,19 @@ class TweetReader:
             sys.exit(1)
 
     def read_tweets(self,
+        skip_deleted: bool = True,
         skip_retweeted_and_quoted: bool = False
     ) -> Iterable[Any]:
         try:
             with jl.Reader(self.f) as reader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
+                    # Skip tweets that are marked as retweets
                     if skip_retweeted_and_quoted:
                         if "quoted_status" in tweet or "retweeted_status" in tweet:
                             continue
+                    # Skip deleted tweets
+                    if skip_deleted and "deleted" in tweet:
+                        continue
                     yield tweet
         except (UnicodeDecodeError, gzip.BadGzipFile, zlib.error) as err:
             logging.error(f"Error reading {self.path} of type {self.ftype}: {err}")

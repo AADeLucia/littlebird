@@ -50,17 +50,30 @@ class TweetReader:
 
     def read_tweets(self,
         skip_deleted: bool = True,
+        skip_withheld: bool = True,
         skip_retweeted_and_quoted: bool = False
     ) -> Iterable[Any]:
+        # Initialize counters
+        count_total = 0
+        count_deleted = 0
+        count_withheld = 0
+        count_retweeted = 0
         try:
             with jl.Reader(self.f) as reader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
+                    count_total += 1
                     # Skip tweets that are marked as retweets
                     if skip_retweeted_and_quoted:
                         if "quoted_status" in tweet or "retweeted_status" in tweet:
+                            count_retweeted += 1
                             continue
                     # Skip deleted tweets
                     if skip_deleted and "delete" in tweet:
+                        count_deleted += 1
+                        continue
+                    # Skip 'status_withheld' tweets
+                    if skip_withheld and "status_withheld" in tweet:
+                        count_withheld += 1
                         continue
                     yield tweet
         except (UnicodeDecodeError, gzip.BadGzipFile, zlib.error) as err:
@@ -70,6 +83,14 @@ class TweetReader:
 
         # Close file
         self.f.close()
+        # Print stats
+        logging.warning(f"""
+Total iterated tweets: {count_total:,}
+Remaining tweets: {count_total - (count_deleted + count_withheld + count_retweeted):,}
+Skipped tweets:
+    Deleted: {count_deleted:,}
+    Withheld: {count_withheld:,}
+    Retweeted: {count_retweeted:,}""")
         return
 
 

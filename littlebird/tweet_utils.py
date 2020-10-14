@@ -60,7 +60,7 @@ class TweetReader:
                         if "quoted_status" in tweet or "retweeted_status" in tweet:
                             continue
                     # Skip deleted tweets
-                    if skip_deleted and "deleted" in tweet:
+                    if skip_deleted and "delete" in tweet:
                         continue
                     yield tweet
         except (UnicodeDecodeError, gzip.BadGzipFile, zlib.error) as err:

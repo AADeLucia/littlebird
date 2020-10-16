@@ -35,7 +35,7 @@ skip_domains = regex.compile(r"(4sq|instagram)\.com")
 
 # Define base tokenizer
 class BaseTweetTokenizer:
-    def __init__(self, include_retweeted_and_quoted_content: bool = True):
+    def __init__(self, include_retweeted_and_quoted_content: bool):
         self.include_retweeted_and_quoted_content = include_retweeted_and_quoted_content
     
     def tokenize(self, tweet: str) -> List[str]:
@@ -202,7 +202,7 @@ class TweetTokenizer(BaseTweetTokenizer):
         lowercase: bool = True,
         expand_contractions: bool = False,
         remove_lone_digits: bool = True,
-        include_retweeted_and_quoted_content: bool = True,
+        include_retweeted_and_quoted_content: bool = False,
         replace_usernames_with: str = " ",
         replace_urls_with: str = " "
     ):
@@ -303,7 +303,7 @@ class GloVeTweetTokenizer(BaseTweetTokenizer):
     Tokenizer that tokenizes like the GloVe pre-processor. 
     Original Ruby script here: https://nlp.stanford.edu/projects/glove/preprocess-twitter.rb
     """
-    def __init__(self, include_retweeted_and_quoted_content: bool = True):
+    def __init__(self, include_retweeted_and_quoted_content: bool = False):
         # Initialize base class
         super().__init__(include_retweeted_and_quoted_content)
         
@@ -389,7 +389,7 @@ class BERTweetTokenizer(BaseTweetTokenizer):
 
     Full tokenizer here: https://github.com/VinAIResearch/BERTweet/blob/master/TweetNormalizer.py
     """
-    def __init__(self, include_retweeted_and_quoted_content: bool = True):
+    def __init__(self, include_retweeted_and_quoted_content: bool = False):
         # Initialize base class
         super().__init__(include_retweeted_and_quoted_content)
         self.nltk_tokenizer = NLTKTweetTokenizer()

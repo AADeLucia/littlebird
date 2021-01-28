@@ -51,7 +51,8 @@ class TweetReader:
     def read_tweets(self,
         skip_deleted: bool = True,
         skip_withheld: bool = True,
-        skip_retweeted_and_quoted: bool = False
+        skip_retweeted_and_quoted: bool = False,
+        print_stats: bool = False
     ) -> Iterable[Any]:
         # Initialize counters
         count_total = 0
@@ -84,7 +85,8 @@ class TweetReader:
         # Close file
         self.f.close()
         # Print stats
-        logging.warning(f"""
+        if print_stats:
+            logging.warning(f"""
 Total iterated tweets: {count_total:,}
 Remaining tweets: {count_total - (count_deleted + count_withheld + count_retweeted):,}
 Skipped tweets:

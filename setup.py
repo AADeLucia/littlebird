@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="littlebird",
-    version="0.0.1",
+    version="0.0.2",
     author="Alexandra DeLucia",
     author_email="aadelcuia@jhu.edu",
     description="Utilities for opening and processing Tweets",

@@ -306,7 +306,6 @@ class GloVeTweetTokenizer(BaseTweetTokenizer):
     def __init__(self, include_retweeted_and_quoted_content: bool = False):
         # Initialize base class
         super().__init__(include_retweeted_and_quoted_content)
-        
         self.URL_RE = regex.compile(r"https?:\/\/\S+\b|www\.(\w+\.)+\S*")
         self.HANDLE_RE = regex.compile(r"@\w+")
         self.NUMBER_RE = regex.compile(r"[-+]?[.\d]*[\d]+[:,.\d]*")

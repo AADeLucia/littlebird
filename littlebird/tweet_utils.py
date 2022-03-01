@@ -62,6 +62,9 @@ class TweetReader:
         try:
             with jl.Reader(self.f) as reader:
                 for tweet in reader.iter(skip_empty=True, skip_invalid=True):
+                    # Skip invalid tweets
+                    if not isinstance(tweet, dict):
+                        continue
                     count_total += 1
                     # Skip tweets that are marked as retweets
                     if skip_retweeted_and_quoted:

@@ -17,7 +17,7 @@ python setup.py develop
 
 ### 2. Install with `pip`
 ```bash
-pip install git+git://github.com/AADeLucia/littlebird.git#egg=littlebird
+pip install littlebird-twitter-utils
 ```
 
 

@@ -10,13 +10,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="littlebird",
-    version="0.0.2",
+    version="1.0.0",
     author="Alexandra DeLucia",
-    author_email="aadelcuia@jhu.edu",
+    author_email="aadelucia@jhu.edu",
     description="Utilities for opening and processing Tweets",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="",
+    url="https://github.com/AADeLucia/littlebird",
     packages=setuptools.find_packages(),
     install_requires=["jsonlines", "regex", "filetype", "lxml", "emoji", "nltk"],
     license="MIT",
